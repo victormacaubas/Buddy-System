@@ -9,3 +9,15 @@ Original Code from: (https://github.com/wuwenbin/buddy2)
     alloc <size>
     free <offset>
     ...
+
+Makefile explanation: 
+
+all: buddy_test: Define a regra padrão "all", que depende do alvo "buddy_test". Ao executar o comando "make" sem especificar nenhum alvo, o alvo "buddy_test" será construído.
+
+buddy_test: buddy.o buddy_test.o: Define a regra para construir o alvo "buddy_test". Ele depende dos arquivos objeto "buddy.o" e "buddy_test.o". A linha seguinte especifica o comando de compilação para criar o executável "buddy_test" a partir desses arquivos objetos.
+
+%.o: %.c: Define uma regra genérica para construir qualquer arquivo objeto ".o" a partir de um arquivo-fonte ".c" correspondente. O símbolo "%" é uma substituição de padrão que corresponderá a qualquer nome de arquivo.
+
+gcc -c $^: Comando de compilação para gerar um arquivo objeto ".o" a partir de um arquivo-fonte ".c". O "$^" é uma variável automática que representa todas as dependências da regra.
+
+clean: rm -rf *.o buddy_test: Define a regra "clean" para limpar os arquivos gerados durante a compilação. O comando "rm -rf" remove os arquivos com extensão ".o" e o executável "buddy_test".
