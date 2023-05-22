@@ -17,34 +17,34 @@ struct buddy {
     size_t size;
     size_t longest[1];
 };
-
+// Funções auxiliares inline para calcular o filho esquerdo, filho direito e pai de um nó na árvore de alocação 
 static inline int left_child(int index)
 {
-    /* index * 2 + 1 */
-    return ((index << 1) + 1); 
+    
+    return ((index << 1) + 1); // index * 2 + 1
 }
 
 static inline int right_child(int index)
 {
-    /* index * 2 + 2 */
-    return ((index << 1) + 2);
+   
+    return ((index << 1) + 2); // index * 2 + 2
 }
 
 static inline int parent(int index)
 {
-    /* (index+1)/2 - 1 */
-    return (((index+1)>>1) - 1);
+   
+    return (((index+1)>>1) - 1); // (index+1)/2 - 1
 }
-
+// Verifica se o número é uma potência de 2
 static inline bool is_power_of_2(int index)
 {
-    return !(index & (index - 1));
+    return !(index & (index - 1)); 
 }
-
+// Macros para retornar o máximo e o mínimo entre dois valores
 #define max(a, b) (((a)>(b))?(a):(b))
 #define min(a, b) (((a)<(b))?(a):(b))
 
-/* a wrapper for malloc */
+// Função wrapper para alocar memória usando malloc
 static void *b_malloc(size_t size)
 {
     void *tmp = NULL;
@@ -58,12 +58,12 @@ static void *b_malloc(size_t size)
     return tmp;
 }
 
-/* a wrapper for free */
+// Função wrapper para liberar memória usando free. Ela libera a memória alocada anteriormente
 static void b_free(void *addr)
 {
     free(addr);
 }
-
+// Função para calcular a próxima potência de 2 para um dado número
 static inline unsigned next_power_of_2(unsigned size)
 {
     /* depend on the fact that size < 2^32 */
@@ -75,7 +75,7 @@ static inline unsigned next_power_of_2(unsigned size)
     size |= (size >> 16);
     return size + 1;
 }
-
+//é usada para criar uma nova instância do Buddy System, alocando memória para a estrutura struct buddy e inicializando o array longest.
 /** allocate a new buddy structure 
  * @param num_of_fragments number of fragments of the memory to be managed 
  * @return pointer to the allocated buddy structure */
@@ -90,13 +90,13 @@ struct buddy *buddy_new(unsigned num_of_fragments)
         return NULL;
     }
 
-    /* alloacte an array to represent a complete binary tree */
+    // Aloca uma estrutura buddy que representa uma árvore binária completa
     self = (struct buddy *) b_malloc(sizeof(struct buddy) 
                                      + 2 * num_of_fragments * sizeof(size_t));
     self->size = num_of_fragments;
     node_size = num_of_fragments * 2;
     
-    /* initialize *longest* array for buddy structure */
+    // Inicializa o array *longest* para a estrutura buddy
     int iter_end = num_of_fragments * 2 - 1;
     for (i = 0; i < iter_end; i++) {
         if (is_power_of_2(i+1)) {
@@ -107,14 +107,13 @@ struct buddy *buddy_new(unsigned num_of_fragments)
 
     return self;
 }
-
+//  Esta função é responsável por liberar a memória alocada para a estrutura do sistema buddy. Ela chama b_free para liberar a memória apontada por self.
 void buddy_destory(struct buddy *self)
 {
     b_free(self);
 }
 
-/* choose the child with smaller longest value which is still larger
- * than *size* */
+// Esta função é usada internamente para escolher o nó filho com o menor valor "longest" que ainda é maior que o tamanho solicitado. Ela recebe como entrada o ponteiro self para a estrutura do buddy system, o índice do nó atual e o tamanho desejado. Ela compara os valores "longest" dos nós filhos esquerdo e direito e seleciona aquele com o menor valor. Se o tamanho do filho selecionado ainda for maior que o tamanho solicitado, ela escolhe o outro filho. A função retorna o índice do filho escolhido.
 unsigned choose_better_child(struct buddy *self, unsigned index, size_t size)
 {
     struct compound {
@@ -135,8 +134,7 @@ unsigned choose_better_child(struct buddy *self, unsigned index, size_t size)
     return children[min_idx].index;
 }
 
-/** allocate *size* from a buddy system *self* 
- * @return the offset from the beginning of memory to be managed */
+// Esta função é usada para alocar um bloco de memória do tamanho especificado a partir do sistema buddy representado por self. Ela retorna o deslocamento a partir do início da memória gerenciada onde o bloco alocado começa. Se a alocação falhar, ela retorna -1. A função primeiro verifica se a estrutura do buddy system é válida e se o tamanho solicitado está dentro do tamanho de memória disponível. Em seguida, encontra o nó apropriado na árvore da estrutura buddy para alocar o bloco de memória. Ela seleciona iterativamente os nós filhos com base na função choose_better_child até encontrar um nó com um tamanho igual ao tamanho solicitado. Ela atualiza o valor "longest" do nó selecionado para 0 e ajusta os valores "longest" dos nós pais. Por fim, calcula o deslocamento do bloco alocado e o retorna.
 int buddy_alloc(struct buddy *self, size_t size)
 {
     if (self == NULL || self->size < size) {
@@ -171,7 +169,7 @@ int buddy_alloc(struct buddy *self, size_t size)
 
     return offset;
 }
-
+//Esta função é usada para liberar um bloco de memória alocado anteriormente no sistema buddy. Ela recebe o ponteiro self para a estrutura do buddy system e o deslocamento do bloco a ser liberado. A função verifica primeiro se a estrutura do buddy system é válida e se o deslocamento está dentro do intervalo da memória gerenciada. Em seguida, percorre a árvore para encontrar o nó correspondente ao deslocamento fornecido. Ela atualiza o valor "longest" do nó para o tamanho do nó correspondente e ajusta os valores "longest" dos nós pais.
 void buddy_free(struct buddy *self, int offset)
 {
     if (self == NULL || offset < 0 || offset > self->size) {
@@ -209,7 +207,7 @@ void buddy_free(struct buddy *self, int offset)
         }
     }
 }
-
+//Esta função é usada para imprimir uma representação visual da árvore do sistema buddy e dos valores "longest" de cada nó. Ela imprime os valores "longest" em um formato tabular, mostrando os níveis e os tamanhos dos nós correspondentes. Também visualiza o status de alocação de cada nó usando os caracteres "-", "/" e "".
 void buddy_dump(struct buddy *self)
 {
     int len = self->size << 1;
@@ -253,7 +251,7 @@ void buddy_dump(struct buddy *self)
     }
     printf("\n");
 }
-
+//Esta função retorna o tamanho do bloco de memória alocado no deslocamento
 int buddy_size(struct buddy *self, int offset)
 {
     unsigned node_size = 1;
